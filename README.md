@@ -1,0 +1,130 @@
+# midihelper
+
+`midihelper` is a single CLI for two everyday tasks:
+
+1. **Convert MIDI → CSV** with absolute ticks and wall-clock seconds (tempo-aware).
+2. **Extract data from a CSV column** interactively or via flags, with optional
+   significant-figures rounding and per-track filtering.
+
+---
+
+## Installation (system-wide)
+
+### Option A: pipx (recommended)
+```bash
+pipx install .
+# Or: pipx install git+https://github.com/you/midihelper.git
+
+Option B: pip (user)
+
+pip install --user .
+# Ensure ~/.local/bin is on your PATH (Linux/macOS)
+
+After install, the command midihelper should be available in your terminal.
+
+⸻
+
+Quick Start
+
+Convert MIDI → CSV
+
+midihelper -midi-csv path/to/song.mid
+# Writes path/to/song.csv by default
+
+midihelper -midi-csv path/to/song.mid out.csv
+# Writes out.csv explicitly
+
+MIDI CSV columns
+	•	track: Track index
+	•	abs_tick: Absolute tick in that track
+	•	time_s: Seconds from start (tempo-aware)
+	•	msg_type: Message type (e.g., note_on, note_off, set_tempo, meta)
+	•	channel, note, velocity, control, value, program
+	•	tempo_us_per_beat, bpm (only on tempo meta)
+	•	meta_type, text (for meta messages with text-like payloads)
+
+Extract a CSV Column (interactive)
+
+midihelper -csv-extract data.csv
+# Prompts you to choose a header (dynamically read from the file),
+# optionally set sig figs for numeric columns, and optionally filter by track.
+# Outputs: [ ... ... ... ] (a bracketed list as text)
+
+Extract a CSV Column (non-interactive)
+
+# Choose column by name
+midihelper -csv-extract data.csv --column velocity --sigfigs 3
+
+# Filter to one track value (matches as string)
+midihelper -csv-extract data.csv --column note --track 3
+
+# Save to file instead of printing
+midihelper -csv-extract data.csv --column note --output notes.txt
+
+Output format is always a single bracketed JSON-like list (no quotes around numbers):
+
+[60, 64, 67, 72]
+
+Strings are printed verbatim.
+
+⸻
+
+Help
+
+midihelper -help
+midihelper -h
+midihelper --help
+
+
+⸻
+
+Examples
+
+Convert multiple MIDIs
+
+for f in midis/*.mid; do
+  midihelper -midi-csv "$f"
+done
+
+Extract just the notes from a converted MIDI CSV
+
+midihelper -csv-extract song.csv --column note --track 0 --output notes.txt
+
+Round values to N significant figures (floats)
+
+midihelper -csv-extract measures.csv --column amplitude --sigfigs 2
+
+
+⸻
+
+Troubleshooting
+	•	command not found: midihelper
+Ensure your installer’s bin directory is on PATH.
+	•	pipx ensurepath
+	•	For pip --user: add ~/.local/bin (Linux/macOS) or check pip show midihelper.
+	•	Unicode or CSV read errors
+Ensure the CSV is UTF-8 encoded. If not, convert it first:
+
+iconv -f WINDOWS-1252 -t UTF-8 old.csv > new.csv
+
+
+	•	Tempo changes not reflected in seconds
+They should be — we merge tracks and build a global tempo map. If you have a corner case, open an issue with the minimal MIDI sample.
+
+⸻
+
+Development
+
+python -m venv .venv && source .venv/bin/activate
+pip install -U pip
+pip install -e .
+midihelper -help
+
+
+⸻
+
+License
+
+MIT
+
+---
