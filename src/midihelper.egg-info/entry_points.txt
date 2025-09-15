@@ -1,0 +1,2 @@
+[console_scripts]
+midihelper = midihelper.cli:main

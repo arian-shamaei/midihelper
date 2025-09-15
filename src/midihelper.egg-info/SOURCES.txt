@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/midihelper/__init__.py
+src/midihelper/cli.py
+src/midihelper.egg-info/PKG-INFO
+src/midihelper.egg-info/SOURCES.txt
+src/midihelper.egg-info/dependency_links.txt
+src/midihelper.egg-info/entry_points.txt
+src/midihelper.egg-info/requires.txt
+src/midihelper.egg-info/top_level.txt
