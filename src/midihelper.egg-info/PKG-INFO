@@ -9,7 +9,7 @@ Requires-Dist: pandas>=2.0
 
 # midihelper
 
-`midihelper` is a single CLI for two everyday tasks:
+`midihelper` converts midi files and outputs data in specific formats:
 
 1. **Convert MIDI → CSV** with absolute ticks and wall-clock seconds (tempo-aware).
 2. **Extract data from a CSV column** interactively or via flags, with optional
@@ -28,6 +28,7 @@ Option B: pip (user)
 
 pip install --user .
 # Ensure ~/.local/bin is on your PATH (Linux/macOS)
+```
 
 After install, the command midihelper should be available in your terminal.
 
@@ -44,13 +45,13 @@ midihelper -midi-csv path/to/song.mid out.csv
 # Writes out.csv explicitly
 
 MIDI CSV columns
-	•	track: Track index
-	•	abs_tick: Absolute tick in that track
-	•	time_s: Seconds from start (tempo-aware)
-	•	msg_type: Message type (e.g., note_on, note_off, set_tempo, meta)
-	•	channel, note, velocity, control, value, program
-	•	tempo_us_per_beat, bpm (only on tempo meta)
-	•	meta_type, text (for meta messages with text-like payloads)
+- track: Track index
+- abs_tick: Absolute tick in that track
+- time_s: Seconds from start (tempo-aware)
+- msg_type: Message type (e.g., note_on, note_off, set_tempo, meta)
+- channel, note, velocity, control, value, program
+- tempo_us_per_beat, bpm (only on tempo meta)
+- meta_type, text (for meta messages with text-like payloads)
 
 Extract a CSV Column (interactive)
 
