@@ -27,7 +27,16 @@ def _print_bracketed(values: Iterable) -> str:
         elif isinstance(v, str):
             out_elems.append(v)
         else:
-            out_elems.append(str(v))
+            # Format numbers with 3 decimal places; keep ints as-is
+            try:
+                if isinstance(v, float):
+                    out_elems.append(f"{v:.3f}")
+                elif isinstance(v, int):
+                    out_elems.append(str(v))
+                else:
+                    out_elems.append(str(v))
+            except Exception:
+                out_elems.append(str(v))
     return "[" + " ".join(out_elems) + "]"
 
 
@@ -286,7 +295,7 @@ def convert_midi_to_csv(input_path: Path, output_path: Path | None = None) -> Pa
     Track, Event Type, Midi Note, Note Name, Velocity, Duration (seconds), Time (seconds)
     - Track indices are renumbered to start at 0 for the first track that contains notes.
     - Only note_on events (with velocity>0) are emitted, paired with their note_off to compute duration.
-    - Floats are formatted with 16 decimal places.
+    - Floats are formatted with 3 decimal places.
     """
     if output_path is None:
         output_path = input_path.with_suffix(".csv")
@@ -334,9 +343,9 @@ def convert_midi_to_csv(input_path: Path, output_path: Path | None = None) -> Pa
                             "note_on",
                             msg.note,
                             _note_name(msg.note),
-                            f"{start_vel/127.0:.16f}",
-                            f"{duration:.16f}",
-                            f"{start_s:.16f}",
+                            f"{start_vel/127.0:.3f}",
+                            f"{duration:.3f}",
+                            f"{start_s:.3f}",
                         ])
 
     return output_path
