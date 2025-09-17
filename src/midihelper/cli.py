@@ -16,16 +16,27 @@ from mido import MidiFile, merge_tracks
 
 def _print_bracketed(values: Iterable) -> str:
     """
-    Render a list-like sequence to a single bracketed line:
-    [v1, v2, v3]
-    Strings are printed as-is; numbers use their existing formatting.
+    Render a list-like sequence (supports nested lists) to a single
+    bracketed line with space-separated items. Example:
+    [x x [y y] x]
     """
     out_elems = []
     for v in values:
-        if isinstance(v, str):
+        if isinstance(v, (list, tuple)):
+            out_elems.append(_print_bracketed(v))
+        elif isinstance(v, str):
             out_elems.append(v)
         else:
-            out_elems.append(str(v))
+            # Format numbers with 3 decimal places; keep ints as-is
+            try:
+                if isinstance(v, float):
+                    out_elems.append(f"{v:.3f}")
+                elif isinstance(v, int):
+                    out_elems.append(str(v))
+                else:
+                    out_elems.append(str(v))
+            except Exception:
+                out_elems.append(str(v))
     return "[" + " ".join(out_elems) + "]"
 
 
@@ -128,11 +139,31 @@ def extract_csv_column(
             if ans == "y":
                 track = input("Enter track value (compared as string): ").strip()
 
-        values = []
+        # Identify a time column (for grouping simultaneous events)
+        time_key = None
+        for name in ("time (seconds)", "time_s", "time", "seconds"):
+            if name in header_lut:
+                time_key = header_lut[name]
+                break
+
+        # Collect values with optional time for grouping
+        grouped_values = []  # will become a list with nested lists for equal-time groups
+        current_time = None
+        current_group: list = []
+
+        def _finalize_group():
+            if not current_group:
+                return
+            if len(current_group) == 1:
+                grouped_values.append(current_group[0])
+            else:
+                grouped_values.append(list(current_group))
+
         for row in reader:
             if track_key is not None and track is not None:
                 if str(row.get(track_key, "")) != str(track):
                     continue
+
             v = row.get(col_key, "")
             # Try to coerce to int if integer-like, else float for numeric
             if isinstance(v, str) and v != "":
@@ -145,7 +176,29 @@ def extract_csv_column(
                         v = _format_sigfig(fv, sigfigs) if sigfigs is not None else fv
                 except Exception:
                     pass
-            values.append(v)
+
+            tval = row.get(time_key, None) if time_key else None
+            if time_key is None:
+                # No time grouping available; behave as before
+                grouped_values.append(v)
+                continue
+
+            if current_time is None:
+                current_time = tval
+                current_group = [v]
+            elif tval == current_time:
+                current_group.append(v)
+            else:
+                _finalize_group()
+                current_time = tval
+                current_group = [v]
+
+        # Flush last group if grouping by time
+        if time_key is not None:
+            _finalize_group()
+            values = grouped_values
+        else:
+            values = grouped_values
 
     out_text = _print_bracketed(values)
 
@@ -242,7 +295,7 @@ def convert_midi_to_csv(input_path: Path, output_path: Path | None = None) -> Pa
     Track, Event Type, Midi Note, Note Name, Velocity, Duration (seconds), Time (seconds)
     - Track indices are renumbered to start at 0 for the first track that contains notes.
     - Only note_on events (with velocity>0) are emitted, paired with their note_off to compute duration.
-    - Floats are formatted with 16 decimal places.
+    - Floats are formatted with 3 decimal places.
     """
     if output_path is None:
         output_path = input_path.with_suffix(".csv")
@@ -290,9 +343,9 @@ def convert_midi_to_csv(input_path: Path, output_path: Path | None = None) -> Pa
                             "note_on",
                             msg.note,
                             _note_name(msg.note),
-                            f"{start_vel/127.0:.16f}",
-                            f"{duration:.16f}",
-                            f"{start_s:.16f}",
+                            f"{start_vel/127.0:.3f}",
+                            f"{duration:.3f}",
+                            f"{start_s:.3f}",
                         ])
 
     return output_path
